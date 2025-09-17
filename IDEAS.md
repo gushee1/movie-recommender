@@ -1,0 +1,1 @@
+1. Maybe theres also a place for adding a film char personality test. If the visual style is going to be pixelated, maybe gives us an excuse to put real pics of people through a pixelation filter that we code? could be like p2 cv of 280 type project.
