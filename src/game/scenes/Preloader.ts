@@ -37,6 +37,9 @@ export class Preloader extends Scene
 
         // Character assets
         this.load.image('character-idle', 'character/sprite_character00.png')
+
+        // NPC assets
+        this.load.image('npc', 'npcs/npc1.png')
     }
 
     create ()
