@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { IRefPhaserGame, PhaserGame } from './PhaserGame';
 import OpenAI from 'openai';
+import { EventBus } from './game/EventBus';
 
 const client = new OpenAI({
     apiKey: import.meta.env.VITE_OPENAI_API_KEY,
@@ -14,6 +15,19 @@ function App()
 
     const [message, setMessage] = useState("");
     const [response, setResponse] = useState("");
+
+    const [scene, setScene] = useState<Phaser.Scene | null>(null);
+
+    const [levelDone, setLevelDone] = useState(false);
+
+    useEffect(() => {
+        const handler = () => setLevelDone(true);
+        EventBus.on("level-done", handler);
+    
+        return () => {
+            EventBus.off("level-done", handler); // cleanup
+        };
+    }, []);
 
     // TODO: move this into a module
     const queryGPT = async () => {
@@ -38,10 +52,18 @@ function App()
         
     }
 
+    const advanceLevel = () => {
+        EventBus.emit("goto-next-level")
+        setLevelDone(false);
+    }
+
     return (
         <div id="app">
             <PhaserGame ref={phaserRef} currentActiveScene={currentScene} />
             <div>
+                <div>
+                    <button onClick={advanceLevel} disabled={!levelDone}>Proceed to next level</button>
+                </div>
                 <div>
                     <p>GPT Integration</p>
                     <input

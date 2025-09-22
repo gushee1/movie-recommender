@@ -33,11 +33,15 @@ export class Game extends Scene
 
     create ()
     {
+        // General
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x00ff00);
 
         this.background = this.add.image(512, 384, 'background');
         this.background.setAlpha(0.5);
+
+        // Events
+        EventBus.on("goto-next-level", () => this.changeScene());
 
         // Assign Controls
         this.arrowKeys = this.input.keyboard!.createCursorKeys();
@@ -102,8 +106,12 @@ export class Game extends Scene
     }
 
     interactNPC(prompt: string) {
-        this.displayText.setText(prompt)
-        //console.log(prompt)
+        // TODO: move player to NPC before adding text
+        this.displayText.setText(prompt);
+        this.conversationsThisLevel++;
+        if (this.conversationsThisLevel >= 4) {
+            EventBus.emit('level-done', this);
+        }
     }
 
     moveNPC(npc: Phaser.Physics.Arcade.Sprite) {
@@ -117,7 +125,12 @@ export class Game extends Scene
     
         const dir = Phaser.Math.RND.pick(directions);
         npc.setVelocity(dir.x * this.npcSpeed, dir.y * this.npcSpeed);
-    }    
+    }
+
+    changeScene ()
+    {
+        this.scene.start('Game');
+    }
 
     update() {
         // Player Movement
@@ -139,10 +152,5 @@ export class Game extends Scene
             //this.moveNPC(sprite);
             return true;
         })
-    }
-
-    changeScene ()
-    {
-        this.scene.start('GameOver');
     }
 }
