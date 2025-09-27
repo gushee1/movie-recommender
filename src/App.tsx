@@ -1,12 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { IRefPhaserGame, PhaserGame } from './PhaserGame';
-import OpenAI from 'openai';
+import { queryGPT } from './composables/useAI';
 import { EventBus } from './game/EventBus';
-
-const client = new OpenAI({
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-    dangerouslyAllowBrowser: true
-})
 
 function App()
 {
@@ -29,27 +24,14 @@ function App()
         };
     }, []);
 
-    // TODO: move this into a module
-    const queryGPT = async () => {
-        try {
-            const result = await client.chat.completions.create({
-                model: "gpt-4o-mini",
-                messages: [{ role: "user", content: message }],
-            });
-            setResponse(result.choices[0].message.content ?? "");
-        } catch (err: any) {
-            console.error("OpenAI API error:", err);
-            if (err.response) {
-                setResponse(`Error ${err.response.status}: ${JSON.stringify(err.response.data)}`);
-            } else {
-                setResponse(err.message ?? "Unknown error");
-            }
-        }
-    }
-
     // Event emitted from the PhaserGame component
     const currentScene = (scene: Phaser.Scene) => {
         
+    }
+    
+    const getResponseFromLLM = async (prompt: string) => {
+        let answer: string = await queryGPT(prompt);
+        setResponse(answer);
     }
 
     const advanceLevel = () => {
@@ -72,7 +54,7 @@ function App()
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="Ask me anything..."
                     />
-                    <button onClick={queryGPT}>Ask</button>
+                    <button onClick={() => getResponseFromLLM(message)}>Ask</button>
                     <p>Response: {response}</p>
                 </div>
             </div>
