@@ -1,3 +1,4 @@
+import { queryGPT } from '../../composables/useAI';
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 
@@ -105,8 +106,10 @@ export class Game extends Scene
         EventBus.emit('current-scene-ready', this);
     }
 
-    interactNPC(prompt: string) {
+    async interactNPC(prompt: string) {
         // TODO: move player to NPC before adding text
+
+        //let response = await queryGPT()
         this.displayText.setText(prompt);
         this.conversationsThisLevel++;
         if (this.conversationsThisLevel >= 4) {

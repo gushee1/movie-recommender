@@ -12,6 +12,40 @@ const client = new OpenAI({
     dangerouslyAllowBrowser: true
 });
 
+export interface StoryResponse {
+    narrative: string;
+    choices: string[];
+}
+
+export async function generateStoryResponse(message: string): Promise<StoryResponse> {
+    try {
+      const result = await client.chat.completions.create({
+        model,
+        messages: [
+          {
+            role: "system",
+            content: `
+            You are a narrative engine for an interactive story. 
+            Your output must be valid JSON with this structure:
+            {
+              "narrative": "short narrative text",
+              "choices": ["Option A text", "Option B text"]
+            }
+            Ensure you strictly return JSON — no extra text, commentary, or explanation.`
+          },
+          { role: "user", content: message }
+        ],
+        response_format: { type: "json_object" }
+      });
+  
+      const content = result.choices[0].message?.content ?? "{}";
+      return JSON.parse(content);
+    } catch (err: any) {
+      console.error("OpenAI API error:", err);
+      return { narrative: "Error occurred.", choices: [] };
+    }
+}
+
 export async function queryGPT(message: string): Promise<string> {
     try {
       const result = await client.chat.completions.create({
