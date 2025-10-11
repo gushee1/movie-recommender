@@ -1,19 +1,4 @@
-# Phaser React TypeScript Template
-
-This is a Phaser 3 project template that uses the React framework and Vite for bundling. It includes a bridge for React to Phaser game communication, hot-reloading for quick development workflow and scripts to generate production-ready builds.
-
-**[This Template is also available as a JavaScript version.](https://github.com/phaserjs/template-react)**
-
-### Versions
-
-This template has been updated for:
-
-- [Phaser 3.90.0](https://github.com/phaserjs/phaser)
-- [React 19.0.0](https://github.com/facebook/react)
-- [Vite 6.3.1](https://github.com/vitejs/vite)
-- [TypeScript 5.7.2](https://github.com/microsoft/TypeScript)
-
-![screenshot](screenshot.png)
+# Movie Recommender Game (built from Phaser React TypeScript Template)
 
 ## Requirements
 
