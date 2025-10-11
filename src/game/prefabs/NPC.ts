@@ -1,11 +1,12 @@
 import Phaser from "phaser";
-import { useStory } from "../../composables/useStory";
+import { getStory } from "../../composables/useStory";
 import { generateStoryResponse } from "../../composables/useAI";
 import { getRandomMotivation, Level1Genre } from "../../composables/personas";
+import { EventBus } from "../EventBus";
 
 export class NPC extends Phaser.Physics.Arcade.Sprite {
     motivation: string;
-    story: any = useStory();
+    walkSpeed: number = 200;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string, genre: Level1Genre) {
         super(scene, x, y, texture);
@@ -31,7 +32,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.motivation = getRandomMotivation(genre);
     }
 
-    buildStoryPrompt(): string {
+    buildStoryPrompt(summary: string): string {
+        // TODO: how does this account for empty stories or adding player input into the story?
         return ` 
             You are an NPC in an interactive narrative game. 
 
@@ -40,7 +42,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
             ${this.motivation}
 
             STORY SO FAR:
-            ${this.story.summary}
+            ${summary}
             ---
 
             Your task:
@@ -52,7 +54,14 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       
 
     async interact() {
-        let prompt = this.buildStoryPrompt();
+        const story = getStory();
+        let prompt = this.buildStoryPrompt(story.getSummary());
         let response = await generateStoryResponse(prompt);
+        EventBus.emit('npc-response', {'response': response});
+
+        // TODO: how does this get added to the current story?
+        // Is this the right way?
+        story.addMessage("npc", response.narrative);
+        await story.updateSummary();
     }
 };

@@ -1,36 +1,66 @@
-import { create } from "zustand";
 import { queryGPT } from "./useAI";
 
-// TODO: might not need this struct, simple string might be enough.
+function summarize(summary: string) {
+  return `
+    Read the following story text. Generate a condensed summary that preserves all important events,
+    character actions, relationships, and the story's tone and atmosphere. 
+    Remove only filler or repetitive content. 
+    This summary will be used to continue the story, so every critical detail must be retained,
+    but it should be as brief and token-efficient as possible.
+
+    STORY:
+    ${summary}
+  `;
+}
+
 export interface StoryMessage {
   role: "user" | "npc";
   content: string;
 }
 
-interface StoryState {
-  messages: StoryMessage[];
-  summary: string;
-  addMessage: (role: "user" | "npc", content: string) => void;
-  updateSummary: () => void;
-  resetStory: () => void;
+class StoryManager {
+  private static instance: StoryManager;
+  private messages: StoryMessage[] = [];
+  private summary: string = "";
+
+  private constructor() {}
+
+  static getInstance(): StoryManager {
+    if (!StoryManager.instance) {
+      StoryManager.instance = new StoryManager();
+    }
+    return StoryManager.instance;
+  }
+
+  addMessage(role: "user" | "npc", content: string) {
+    this.messages.push({ role, content });
+  }
+
+  async updateSummary() {
+    const storySoFar = [this.summary, ...this.messages.map((m) => m.content)]
+      .filter(Boolean)
+      .join(". ");
+
+    const prompt = summarize(storySoFar);
+    const newSummary = await queryGPT(prompt);
+    this.summary = newSummary;
+  }
+
+  resetStory() {
+    this.messages = [];
+    this.summary = "";
+  }
+
+  getSummary() {
+    return this.summary;
+  }
+
+  getMessages() {
+    return this.messages;
+  }
 }
 
-function summarize(summary: string) {
-    return "Read the following story text. Generate a condensed summary that preserves all important events, character actions, relationships, and the story's tone and atmosphere. Remove only filler or repetitive content. This summary will be used to continue the story, so every critical detail must be retained, but it should be as brief and token-efficient as possible." + summary;
+// Public getter for singleton
+export function getStory() {
+  return StoryManager.getInstance();
 }
-
-export const useStory = create<StoryState>((set, get) => ({
-  messages: [],
-  summary: "",
-  addMessage: (role, content) =>
-    set((state) => ({
-      messages: [...state.messages, { role, content }],
-    })),
-  updateSummary: async () => {
-    const { messages, summary } = get();
-    const storySoFar = [summary, ...messages.map((m) => m.content)].join(". ");
-    let newSummary = await queryGPT(summarize(storySoFar))
-    set({ summary: newSummary });
-  },
-  resetStory: () => set({ messages: [], summary: "" }),
-}));

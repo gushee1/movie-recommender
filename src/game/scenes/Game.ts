@@ -1,6 +1,8 @@
-import { queryGPT } from '../../composables/useAI';
+import { getRandomMotivation, Level1Genre } from '../../composables/personas';
+import { queryGPT, StoryResponse } from '../../composables/useAI';
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
+import { NPC } from '../prefabs/NPC';
 
 export class Game extends Scene
 {
@@ -20,9 +22,7 @@ export class Game extends Scene
 
     // NPCs
     npcs!: Phaser.Physics.Arcade.Group;
-    npcSpeed: number = 200;
     numNpcs: number = 5;
-    npcTalkRadius: number = 30;
 
     // UI
     displayText: any
@@ -43,6 +43,7 @@ export class Game extends Scene
 
         // Events
         EventBus.on("goto-next-level", () => this.changeScene());
+        EventBus.on('npc-response', this.handleNPCResponse, this);
 
         // Assign Controls
         this.arrowKeys = this.input.keyboard!.createCursorKeys();
@@ -60,21 +61,15 @@ export class Game extends Scene
 
         // Create NPCs
         this.npcs = this.physics.add.group();
-        for (let i: number = 0; i < 5; i++) {
+
+        for (const genre of Object.values(Level1Genre)) {
             const x = Phaser.Math.Between(50, this.scale.width - 50);
             const y = Phaser.Math.Between(50, this.scale.height - 50);
+            const texture = 'npc';
 
-            const npc = this.npcs.create(x, y, 'npc') as Phaser.Physics.Arcade.Sprite;
-            npc.setCollideWorldBounds(true);
-            npc.setImmovable(true);
+            const npc = new NPC(this, x, y, texture, genre);
 
-            npc.setInteractive();
-
-            npc.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-                if (pointer.leftButtonDown()) {
-                    this.interactNPC(`Hello, I am NPC number ${i}`)
-                }
-            })
+            this.npcs.add(npc);
         }
 
         // Collisions
@@ -106,28 +101,12 @@ export class Game extends Scene
         EventBus.emit('current-scene-ready', this);
     }
 
-    async interactNPC(prompt: string) {
-        // TODO: move player to NPC before adding text
-
-        //let response = await queryGPT()
-        this.displayText.setText(prompt);
+    handleNPCResponse(data: {response: StoryResponse}) {
+        this.displayText.setText(data.response.narrative);
         this.conversationsThisLevel++;
         if (this.conversationsThisLevel >= 4) {
             EventBus.emit('level-done', this);
         }
-    }
-
-    moveNPC(npc: Phaser.Physics.Arcade.Sprite) {
-        const directions = [
-            { x: 0, y: -1 },
-            { x: 0, y: 1 },
-            { x: -1, y: 0 },
-            { x: 1, y: 0 },
-            { x: 0, y: 0 }
-        ];
-    
-        const dir = Phaser.Math.RND.pick(directions);
-        npc.setVelocity(dir.x * this.npcSpeed, dir.y * this.npcSpeed);
     }
 
     changeScene ()
@@ -152,7 +131,7 @@ export class Game extends Scene
         // NPC Movement
         this.npcs.children.each((npc: Phaser.GameObjects.GameObject) => {
             const sprite = npc as Phaser.Physics.Arcade.Sprite;
-            //this.moveNPC(sprite);
+            // TODO: invoke one movement frame via npc?
             return true;
         })
     }
